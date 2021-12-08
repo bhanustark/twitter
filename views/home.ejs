@@ -1,0 +1,36 @@
+<%- include('partials/header') -%>
+
+
+<div class="row justify-content-evenly py-5 my-5">
+  <!-- Left side -->
+  <div class="col-6 mt-3">
+    <img src="/img/welcome.svg" alt="Happening now!" height="400">
+  </div>
+  <!-- End of left side -->
+
+  <!-- Right side -->
+  <div class="col-3 mt-3">
+    <h3 class="text-center mb-5">Welcome back :)</h3>
+
+    <!-- Login form -->
+    <form method="post" action="/">
+      <div class="mb-3">
+        <label for="inputEmail">Email</label>
+        <input type="text" class="form-control" id="inputEmail" placeholder="email@example.com">
+      </div>
+      <div class="mb-3">
+        <label for="inputPassword">Password</label>
+        <input type="password" class="form-control" id="inputPassword" placeholder="Password">
+      </div>
+      <div class="mb-3">
+        <div class="d-grid gap-2 col-6 mx-auto">
+          <button class="btn btn-primary" type="button">Login</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <!-- End of right side -->
+
+</div>
+
+<%- include('partials/footer') -%>
