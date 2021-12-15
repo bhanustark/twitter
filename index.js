@@ -3,20 +3,17 @@ require('dotenv').config()
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const User = require(__dirname + '/models/user');
-const md5 = require('md5');
+const session = require('express-session');
+const passport = require('passport');
+const passportLocalMongoose = require("passport-local-mongoose");
+
+const User = require('./models/user');
+
+//Import Routes
+const Signup = require(__dirname + "/routes/Signup");
 
 //created app constant for express class
 const app = express();
-
-//Connect database using mongoose
-//DBHOST is an env variable that contains the connection of Mongodb
-//DBHOST should be defined in .env file of the root folder
-mongoose.connect(process.env.DBHOST);
-
-// Getting appname from env file and setting a constant variable
-const appname = process.env.APPNAME;
-
 
 /**
  extended app features with other modules
@@ -30,11 +27,39 @@ app.use(bodyParser.urlencoded( {extended: true }));
 //setting a static public directory using express
 app.use(express.static(__dirname + '/public'))
 
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
+}))
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+//Connect database using mongoose
+//DBHOST is an env variable that contains the connection of Mongodb
+//DBHOST should be defined in .env file of the root folder
+mongoose.connect(process.env.DBHOST);
+
+// Getting appname from env file and setting a constant variable
+const appname = process.env.APPNAME;
+
+passport.use(User.createStrategy());
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
 /**
 //app routings
 */
 app.get("/", function(req, res){
-  res.render("home", {pageTitle: appname});
+
+  if (req.isAuthenticated()) {
+    res.render("index", {pageTitle: appname});
+    console.log(req.user);
+  } else {
+    res.render("home", {pageTitle: appname});
+  }
 });
 
 app.get("/signup", function(req, res) {
@@ -42,61 +67,40 @@ app.get("/signup", function(req, res) {
 });
 
 app.post("/signup", function(req, res) {
-  let email = req.body.email;
-  let password = req.body.password;
-  let fullname = req.body.name;
-
-  let error;
-
-  if (!email) {
-    error = "Email is required";
-    res.render("signup", {pageTitle: "Create an account | " + appname, pageError: error});
-  } else if (!password) {
-    error = "Password is required";
-    res.render("signup", {pageTitle: "Create an account | " + appname, pageError: error});
-  } else if (!fullname) {
-    error = "Full name is required";
-    res.render("signup", {pageTitle: "Create an account | " + appname, pageError: error});
-  } else {
-    if (fullname.length >=3 && fullname.length <= 25) {
-
-      if (password.length >=8 && password.length <= 50) {
-
-        const user = new User({
-          fullname: fullname,
-          email: email,
-          password: md5(password)
-        })
-
-        User.findOne({email:email}, function(err, found) {
-          if (err) {
-            return handleError(err);
-            // user.save().then(() => console.log('successfully signed up'));
-            // res.render("home", {pageTitle: appname, pageSuccess: "Signed up! now you can login."});
-          }
-          if (found) {
-            res.render("signup", {pageTitle: "Create an account | " + appname, pageError: "Email already exist"});
-          } else {
-            user.save().then(() => console.log('successfully signed up'));
-            res.render("home", {pageTitle: appname, pageSuccess: "Signed up! now you can login."});
-          }
-        })
-
-
-      } else {
-        error = 'Password should be between 8 to 50 characters.';
-        res.render("signup", {pageTitle: "Create an account | " + appname, pageError: error});
-      }
-
+  User.register({username: req.body.username}, req.body.password, function (err, user) {
+    if (err) {
+      console.log(err);
+      res.redirect("/signup")
     } else {
-      error = 'Name should be between 3 to 25 characters.';
-      res.render("signup", {pageTitle: "Create an account | " + appname, pageError: error});
+      passport.authenticate("local")(req, res, function(){
+        res.redirect("/")
+      })
     }
 
-
-  }
-
+  })
 });
+
+app.post("/login", function(req,res) {
+  const user = new User({
+    username: req.body.username,
+    password: req.body.passowrd
+  });
+
+  req.login(user, function(err){
+    if (err) {
+      console.log(err);
+      res.redirect("/")
+    } else {
+      passport.authenticate("local");
+      res.redirect("/")
+    }
+  })
+});
+
+app.get("/logout", function(req,res) {
+  req.logout();
+  res.redirect("/");
+})
 
 //app server port setup
 app.listen(3000, function() {
