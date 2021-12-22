@@ -69,8 +69,8 @@ app.get("/signup", function(req, res) {
 app.post("/signup", function(req, res) {
   User.register({username: req.body.username}, req.body.password, function (err, user) {
     if (err) {
-      console.log(err);
-      res.redirect("/signup")
+      //console.log(err);
+      res.render("signup", {pageTitle: "Create an account | " + appname, pageError: err})
     } else {
       passport.authenticate("local")(req, res, function(){
         res.redirect("/")
@@ -86,15 +86,26 @@ app.post("/login", function(req,res) {
     password: req.body.passowrd
   });
 
-  req.login(user, function(err){
-    if (err) {
-      console.log(err);
-      res.redirect("/")
+  passport.authenticate("local", function (err, user, info) {
+    if(err){
+       console.log(err);
     } else {
-      passport.authenticate("local");
-      res.redirect("/")
+      if (!user) {
+        console.log("username or password is incorrect");
+      } else {
+        req.login(user, function(err){
+          if (err) {
+            console.log(err);
+            res.redirect("/")
+          } else {
+            // passport.authenticate("local");
+            res.redirect("/")
+          }
+        });
+      }
     }
-  })
+  })(req, res);
+
 });
 
 app.get("/logout", function(req,res) {
