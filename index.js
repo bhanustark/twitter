@@ -9,9 +9,6 @@ const passportLocalMongoose = require("passport-local-mongoose");
 
 const User = require('./models/user');
 
-//Import Routes
-const Signup = require(__dirname + "/routes/Signup");
-
 //created app constant for express class
 const app = express();
 
